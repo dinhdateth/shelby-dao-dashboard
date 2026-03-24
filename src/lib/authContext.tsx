@@ -35,9 +35,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Check if Petra is installed on mount
   useEffect(() => {
     const checkPetra = () => {
-      setIsPetraInstalled(!!window.aptos);
+      setIsPetraInstalled(!!getAptos());
     };
-    // Petra may inject after DOM ready, so check after a small delay too
     checkPetra();
     const timer = setTimeout(checkPetra, 500);
     return () => clearTimeout(timer);
@@ -46,11 +45,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Check if already connected on mount
   useEffect(() => {
     const checkConnection = async () => {
-      if (!window.aptos) return;
+      const aptos = getAptos();
+      if (!aptos) return;
       try {
-        const isConnected = await window.aptos.isConnected();
+        const isConnected = await aptos.isConnected();
         if (isConnected) {
-          const account = await window.aptos.account();
+          const account = await aptos.account();
           setWalletAddress(account.address);
         }
       } catch {
@@ -62,15 +62,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const connectWallet = async () => {
     setError(null);
+    const aptos = getAptos();
 
-    if (!window.aptos) {
+    if (!aptos) {
       setError("Please install Petra wallet");
       return;
     }
 
     setConnecting(true);
     try {
-      const response = await window.aptos.connect();
+      const response = await aptos.connect();
       setWalletAddress(response.address);
     } catch (err: any) {
       if (err?.code === 4001 || err?.message?.includes("rejected")) {
@@ -85,8 +86,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const disconnectWallet = async () => {
     try {
-      if (window.aptos) {
-        await window.aptos.disconnect();
+      const aptos = getAptos();
+      if (aptos) {
+        await aptos.disconnect();
       }
     } catch {
       // Ignore disconnect errors
