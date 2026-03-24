@@ -1,40 +1,106 @@
-import { createContext, useContext, useState, ReactNode } from "react";
-
-const generateWalletAddress = () =>
-  "0x" + Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 interface AuthContextType {
   isLoggedIn: boolean;
   walletAddress: string | null;
   walletShort: string | null;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
+  connecting: boolean;
+  error: string | null;
+  isPetraInstalled: boolean;
+  connectWallet: () => Promise<void>;
+  disconnectWallet: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isPetraInstalled, setIsPetraInstalled] = useState(false);
+
+  const isLoggedIn = !!walletAddress;
 
   const walletShort = walletAddress
     ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
     : null;
 
-  const login = (_email: string, _password: string) => {
-    const wallet = generateWalletAddress();
-    setWalletAddress(wallet);
-    setIsLoggedIn(true);
-    return true;
+  // Check if Petra is installed on mount
+  useEffect(() => {
+    const checkPetra = () => {
+      setIsPetraInstalled(!!window.aptos);
+    };
+    // Petra may inject after DOM ready, so check after a small delay too
+    checkPetra();
+    const timer = setTimeout(checkPetra, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Check if already connected on mount
+  useEffect(() => {
+    const checkConnection = async () => {
+      if (!window.aptos) return;
+      try {
+        const isConnected = await window.aptos.isConnected();
+        if (isConnected) {
+          const account = await window.aptos.account();
+          setWalletAddress(account.address);
+        }
+      } catch {
+        // Not connected, that's fine
+      }
+    };
+    checkConnection();
+  }, [isPetraInstalled]);
+
+  const connectWallet = async () => {
+    setError(null);
+
+    if (!window.aptos) {
+      setError("Please install Petra wallet");
+      return;
+    }
+
+    setConnecting(true);
+    try {
+      const response = await window.aptos.connect();
+      setWalletAddress(response.address);
+    } catch (err: any) {
+      if (err?.code === 4001 || err?.message?.includes("rejected")) {
+        setError("Connection rejected by user");
+      } else {
+        setError("Failed to connect wallet");
+      }
+    } finally {
+      setConnecting(false);
+    }
   };
 
-  const logout = () => {
-    setIsLoggedIn(false);
+  const disconnectWallet = async () => {
+    try {
+      if (window.aptos) {
+        await window.aptos.disconnect();
+      }
+    } catch {
+      // Ignore disconnect errors
+    }
     setWalletAddress(null);
+    setError(null);
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, walletAddress, walletShort, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        isLoggedIn,
+        walletAddress,
+        walletShort,
+        connecting,
+        error,
+        isPetraInstalled,
+        connectWallet,
+        disconnectWallet,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
