@@ -1,3 +1,7 @@
-# Welcome to your Lovable project
+Create a professional README.md:
 
-TODO: Document your project here
+* Project name: ShelbyDAO Dashboard
+* Description: Web3-style dashboard for decentralized data management
+* Features list
+* Tech stack
+* How to run
