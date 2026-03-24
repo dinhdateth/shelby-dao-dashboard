@@ -1,5 +1,12 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
+const getAptos = () => (window as any).aptos as {
+  connect: () => Promise<{ address: string }>;
+  disconnect: () => Promise<void>;
+  account: () => Promise<{ address: string }>;
+  isConnected: () => Promise<boolean>;
+} | undefined;
+
 interface AuthContextType {
   isLoggedIn: boolean;
   walletAddress: string | null;
