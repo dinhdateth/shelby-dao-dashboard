@@ -67,7 +67,7 @@ npm run dev
 
 ## 🌐 Live Demo
 
-👉 https://nebula-dash-app.lovable.app
+👉 https://shelbydao.lovable.app
 
 ---
 
