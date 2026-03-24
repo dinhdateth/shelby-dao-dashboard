@@ -1,21 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/authContext";
-import { Hexagon, ArrowRight, Lock, Mail } from "lucide-react";
+import { Hexagon, Wallet, ExternalLink, AlertCircle } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      login(email, password);
-    }, 600);
-  };
+  const { connectWallet, connecting, error, isPetraInstalled } = useAuth();
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
@@ -34,53 +23,52 @@ const Login = () => {
           <h1 className="text-3xl font-display font-bold gradient-text">NexusDAO</h1>
         </div>
 
-        <p className="text-center text-muted-foreground mb-8">Connect to the decentralized network</p>
+        <p className="text-center text-muted-foreground mb-8">
+          Connect your Petra wallet to access the network
+        </p>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="group">
-            <label className="text-sm text-muted-foreground mb-1.5 block">Email</label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="satoshi@example.com"
-                className="w-full pl-10 pr-4 py-3 rounded-lg bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all duration-200"
-              />
+        <div className="space-y-4">
+          {/* Error / Install message */}
+          {(error || !isPetraInstalled) && (
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+              <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-destructive font-medium">
+                  {error || "Petra wallet not detected"}
+                </p>
+                {!isPetraInstalled && (
+                  <a
+                    href="https://petra.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline mt-1 inline-flex items-center gap-1"
+                  >
+                    Install Petra Wallet <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="group">
-            <label className="text-sm text-muted-foreground mb-1.5 block">Password</label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-3 rounded-lg bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all duration-200"
-              />
-            </div>
-          </div>
+          )}
+
+          {/* Connect button */}
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full gradient-btn py-3.5 rounded-lg font-medium flex items-center justify-center gap-2 mt-6 group disabled:opacity-70"
+            onClick={connectWallet}
+            disabled={connecting}
+            className="w-full gradient-btn py-3.5 rounded-lg font-medium flex items-center justify-center gap-3 group disabled:opacity-70"
           >
-            {loading ? (
+            {connecting ? (
               <LoadingSpinner size="sm" />
             ) : (
               <>
-                Launch Dashboard
-                <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+                <Wallet className="w-5 h-5" />
+                Connect Petra Wallet
               </>
             )}
           </button>
-        </form>
+        </div>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Secured by zero-knowledge proofs
+          Powered by Aptos blockchain
         </p>
       </div>
     </div>
