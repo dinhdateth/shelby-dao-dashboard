@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Upload, LogOut, Hexagon, Zap, Unplug } from "lucide-react";
+import { LayoutDashboard, Users, Upload, LogOut, Hexagon, Zap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/lib/authContext";
 import {
@@ -22,7 +22,7 @@ const navItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { disconnectWallet } = useAuth();
+  const { logout } = useAuth();
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border/50">
@@ -33,7 +33,7 @@ export function AppSidebar() {
         </div>
         {!collapsed && (
           <div className="flex items-center gap-2">
-            <span className="font-display text-lg font-bold gradient-text">NexusDAO</span>
+            <span className="font-display text-lg font-bold gradient-text">ShelbyDAO</span>
             <Zap className="w-3.5 h-3.5 text-accent animate-pulse" />
           </div>
         )}
@@ -82,11 +82,11 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={disconnectWallet}
+              onClick={logout}
               className="hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-lg transition-all duration-200 group/logout"
             >
-              <Unplug className="mr-2 h-4 w-4 transition-transform duration-200 group-hover/logout:-translate-x-0.5" />
-              {!collapsed && <span>Disconnect</span>}
+              <LogOut className="mr-2 h-4 w-4 transition-transform duration-200 group-hover/logout:-translate-x-0.5" />
+              {!collapsed && <span>Logout</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
