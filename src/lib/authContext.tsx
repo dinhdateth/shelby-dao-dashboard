@@ -32,29 +32,49 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
     : null;
 
-  // Check if Petra is installed on mount
+  // Check if Petra is installed — retry a few times since extensions inject late
   useEffect(() => {
-    const checkPetra = () => {
-      setIsPetraInstalled(!!getAptos());
+    console.log("[Petra] Checking if Petra wallet is installed...");
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    const check = () => {
+      const aptos = getAptos();
+      console.log(`[Petra] Check attempt ${attempts + 1}: window.aptos =`, aptos ? "found" : "not found");
+      if (aptos) {
+        setIsPetraInstalled(true);
+        return;
+      }
+      attempts++;
+      if (attempts < maxAttempts) {
+        setTimeout(check, 300);
+      } else {
+        console.log("[Petra] Petra wallet not detected after all attempts");
+        setIsPetraInstalled(false);
+      }
     };
-    checkPetra();
-    const timer = setTimeout(checkPetra, 500);
-    return () => clearTimeout(timer);
+
+    check();
   }, []);
 
   // Check if already connected on mount
   useEffect(() => {
+    if (!isPetraInstalled) return;
+
     const checkConnection = async () => {
       const aptos = getAptos();
       if (!aptos) return;
       try {
-        const isConnected = await aptos.isConnected();
-        if (isConnected) {
+        console.log("[Petra] Checking existing connection...");
+        const connected = await aptos.isConnected();
+        console.log("[Petra] Already connected:", connected);
+        if (connected) {
           const account = await aptos.account();
+          console.log("[Petra] Restored account:", account.address);
           setWalletAddress(account.address);
         }
-      } catch {
-        // Not connected, that's fine
+      } catch (err) {
+        console.log("[Petra] Error checking connection:", err);
       }
     };
     checkConnection();
@@ -62,22 +82,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const connectWallet = async () => {
     setError(null);
+
+    console.log("[Petra] Connect requested. Checking window.aptos...");
     const aptos = getAptos();
 
     if (!aptos) {
-      setError("Please install Petra wallet");
+      const msg = "Please install Petra wallet";
+      console.error("[Petra]", msg);
+      setError(msg);
       return;
     }
 
     setConnecting(true);
     try {
-      const response = await aptos.connect();
-      setWalletAddress(response.address);
+      // Step 1: Connect
+      console.log("[Petra] Calling window.aptos.connect()...");
+      const connectResponse = await aptos.connect();
+      console.log("[Petra] connect() response:", JSON.stringify(connectResponse));
+
+      // Step 2: Get account for full address
+      console.log("[Petra] Calling window.aptos.account()...");
+      const accountResponse = await aptos.account();
+      console.log("[Petra] account() response:", JSON.stringify(accountResponse));
+
+      const address = accountResponse.address || connectResponse.address;
+      if (!address) {
+        throw new Error("No address returned from wallet");
+      }
+
+      console.log("[Petra] Connected with address:", address);
+      setWalletAddress(address);
+      setIsPetraInstalled(true);
     } catch (err: any) {
-      if (err?.code === 4001 || err?.message?.includes("rejected")) {
+      console.error("[Petra] Connection error:", err);
+      if (err?.code === 4001 || err?.message?.includes("rejected") || err?.message?.includes("User rejected")) {
         setError("Connection rejected by user");
       } else {
-        setError("Failed to connect wallet");
+        setError(err?.message || "Failed to connect wallet");
       }
     } finally {
       setConnecting(false);
@@ -85,13 +126,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const disconnectWallet = async () => {
+    console.log("[Petra] Disconnecting...");
     try {
       const aptos = getAptos();
       if (aptos) {
         await aptos.disconnect();
+        console.log("[Petra] Disconnected successfully");
       }
-    } catch {
-      // Ignore disconnect errors
+    } catch (err) {
+      console.error("[Petra] Disconnect error:", err);
     }
     setWalletAddress(null);
     setError(null);
