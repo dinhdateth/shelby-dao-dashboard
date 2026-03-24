@@ -1,12 +1,12 @@
 import { useState, useRef } from "react";
-import { Upload, FileText, Hash, CloudUpload, Wallet } from "lucide-react";
+import { FileText, Hash, CloudUpload, Filter } from "lucide-react";
 import { mockApi, UploadedFile } from "@/lib/mockStore";
 import { useAuth } from "@/lib/authContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 const UploadsPage = () => {
-  const { walletAddress } = useAuth();
+  const { email: currentEmail } = useAuth();
   const [files, setFiles] = useState<UploadedFile[]>(mockApi.getFiles());
   const [uploading, setUploading] = useState(false);
   const [showMine, setShowMine] = useState(false);
@@ -14,18 +14,18 @@ const UploadsPage = () => {
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !walletAddress) return;
+    if (!file || !currentEmail) return;
     setUploading(true);
     setTimeout(() => {
-      mockApi.uploadFile(file.name, walletAddress);
+      mockApi.uploadFile(file.name, currentEmail);
       setFiles(mockApi.getFiles());
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
     }, 1000);
   };
 
-  const displayedFiles = showMine && walletAddress
-    ? files.filter((f) => f.uploadedBy === walletAddress)
+  const displayedFiles = showMine && currentEmail
+    ? files.filter((f) => f.uploadedBy === currentEmail)
     : files;
 
   return (
@@ -44,7 +44,7 @@ const UploadsPage = () => {
                 : "bg-muted/50 border border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
             }`}
           >
-            <Wallet className="w-4 h-4" />
+            <Filter className="w-4 h-4" />
             {showMine ? "My Files" : "All Files"}
           </button>
         </div>
@@ -74,7 +74,7 @@ const UploadsPage = () => {
         <div className="space-y-3">
           {displayedFiles.length === 0 ? (
             <div className="glass-card rounded-xl p-10 text-center text-sm text-muted-foreground opacity-0 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "forwards" }}>
-              No files uploaded from your wallet yet
+              No files uploaded by you yet
             </div>
           ) : (
             displayedFiles.map((f, i) => (
@@ -94,7 +94,7 @@ const UploadsPage = () => {
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-xs font-mono text-primary/70">{mockApi.shortWallet(f.uploadedBy)}</p>
+                  <p className="text-xs text-muted-foreground">{f.uploadedBy}</p>
                   <p className="text-xs text-muted-foreground">{f.uploadedAt}</p>
                 </div>
               </div>

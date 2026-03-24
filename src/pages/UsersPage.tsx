@@ -1,26 +1,26 @@
 import { useState } from "react";
-import { UserPlus, Sparkles, Wallet } from "lucide-react";
+import { UserPlus, Sparkles, Filter } from "lucide-react";
 import { mockApi, User } from "@/lib/mockStore";
 import { useAuth } from "@/lib/authContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 
 const UsersPage = () => {
-  const { walletAddress } = useAuth();
+  const { email: currentEmail } = useAuth();
   const [users, setUsers] = useState<User[]>(mockApi.getUsers());
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [showMine, setShowMine] = useState(false);
 
   const handleAdd = () => {
-    if (!name.trim() || !email.trim() || !walletAddress) return;
-    mockApi.addUser(name, email, walletAddress);
+    if (!name.trim() || !email.trim() || !currentEmail) return;
+    mockApi.addUser(name, email, currentEmail);
     setUsers(mockApi.getUsers());
     setName("");
     setEmail("");
   };
 
-  const displayedUsers = showMine && walletAddress
-    ? users.filter((u) => u.addedBy === walletAddress)
+  const displayedUsers = showMine && currentEmail
+    ? users.filter((u) => u.addedBy === currentEmail)
     : users;
 
   return (
@@ -39,7 +39,7 @@ const UsersPage = () => {
                 : "bg-muted/50 border border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
             }`}
           >
-            <Wallet className="w-4 h-4" />
+            <Filter className="w-4 h-4" />
             {showMine ? "My Users" : "All Users"}
           </button>
         </div>
@@ -92,7 +92,7 @@ const UsersPage = () => {
                 {displayedUsers.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-10 text-center text-sm text-muted-foreground">
-                      No users found for your wallet
+                      No users added by you yet
                     </td>
                   </tr>
                 ) : (
@@ -103,14 +103,14 @@ const UsersPage = () => {
                     >
                       <td className="px-6 py-4 text-sm font-medium group-hover:text-primary transition-colors duration-150">{u.name}</td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">{u.email}</td>
-                      <td className="px-6 py-4 text-sm font-mono text-primary/80">{mockApi.shortWallet(u.wallet)}</td>
-                      <td className="px-6 py-4 text-sm font-mono text-muted-foreground">
+                      <td className="px-6 py-4 text-sm font-mono text-primary/80">{u.wallet}</td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
                         {u.addedBy === "system" ? (
                           <span className="px-2 py-0.5 rounded-full bg-muted/50 text-xs">System</span>
-                        ) : u.addedBy === walletAddress ? (
+                        ) : u.addedBy === currentEmail ? (
                           <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">You</span>
                         ) : (
-                          mockApi.shortWallet(u.addedBy)
+                          u.addedBy
                         )}
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">{u.joinedAt}</td>
