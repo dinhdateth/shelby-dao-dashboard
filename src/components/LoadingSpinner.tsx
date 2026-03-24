@@ -21,7 +21,7 @@ export function FullPageLoader() {
         <div className="w-16 h-16 rounded-full border-2 border-muted border-t-primary animate-spin" />
         <div className="absolute inset-0 w-16 h-16 rounded-full border-2 border-transparent border-b-accent animate-spin" style={{ animationDirection: "reverse", animationDuration: "1.5s" }} />
       </div>
-      <p className="text-sm text-muted-foreground animate-pulse">Loading NexusDAO...</p>
+      <p className="text-sm text-muted-foreground animate-pulse">Loading ShelbyDAO...</p>
     </div>
   );
 }
